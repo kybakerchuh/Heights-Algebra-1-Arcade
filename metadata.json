@@ -1,0 +1,6 @@
+{
+  "name": "Heights Algebra 1 Arcade",
+  "description": "Heights High School Tigers Algebra 1 and OST Review Arcade, developed by Mr. Baker and Mr. Tokar.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

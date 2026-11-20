@@ -1,0 +1,150 @@
+{
+  "entities": {
+    "Game": {
+      "title": "Game",
+      "description": "An Algebra 1 or OST review game card displayed in the Heights Algebra 1 Arcade.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80,
+          "description": "Display title of the Algebra 1 review game."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 260,
+          "description": "Short student-facing summary of what the game practices."
+        },
+        "topic": {
+          "type": "string",
+          "enum": [
+            "Data Analysis (Box Whisker, Line of Best Fit, Data, etc...)",
+            "All Things Polynomials",
+            "Functions and Function Notations",
+            "Factoring, Solving, Modeling, Analyzing Quadratics",
+            "Create, Analyze, Model Exponential Functions",
+            "Creating, Graphing, Modeling Linear (Part 1)",
+            "Creating, Graphing, Modeling Linear (Part 2)",
+            "Creating, Solving, Modeling Systems of Equations",
+            "Expressions (Simplify, Equivalent, Evaluate)",
+            "Equations and Inequalities",
+            "Other Topics"
+          ],
+          "description": "Algebra 1 curriculum category."
+        },
+        "reviewType": {
+          "type": "string",
+          "enum": ["OST Review", "Topic Review"],
+          "description": "Whether the game is dedicated OST exam prep or unit topic review."
+        },
+        "gameUrl": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 500,
+          "pattern": "^(https?://.+|#warmup:.+)$",
+          "description": "Teacher-provided link to launch the game."
+        },
+        "thumbnailData": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 450000,
+          "pattern": "^(data:image/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=]+|/src/assets/images/[a-zA-Z0-9_.-]+\\.(jpg|jpeg|png|webp))$",
+          "description": "Uploaded image data URL or bundled local asset path (no external internet links)."
+        },
+        "published": {
+          "type": "boolean",
+          "description": "Whether the game is visible to students in the public arcade."
+        },
+        "featured": {
+          "type": "boolean",
+          "description": "Whether the game is highlighted at the top of the arcade."
+        },
+        "sortOrder": {
+          "type": "integer",
+          "description": "Numeric sort priority (0 to 1000)."
+        },
+        "createdByUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Firebase Auth UID of the teacher who added the game."
+        },
+        "createdByName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80,
+          "description": "Teacher display label (e.g., Mr. Baker, Mr. Tokar)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the game was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the game was last updated."
+        }
+      },
+      "required": [
+        "title",
+        "description",
+        "topic",
+        "reviewType",
+        "gameUrl",
+        "thumbnailData",
+        "published",
+        "featured",
+        "sortOrder",
+        "createdByUid",
+        "createdByName",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AuthorizedTeacher": {
+      "title": "AuthorizedTeacher",
+      "description": "Teacher account authorized to publish, edit, and remove games in the Heights Algebra 1 Arcade.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$",
+          "description": "Verified Google email address of the teacher."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80,
+          "description": "Teacher name (e.g., Mr. Tokar)."
+        },
+        "addedByUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "UID of the admin who added this teacher."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when access was granted."
+        }
+      },
+      "required": ["email", "displayName", "addedByUid", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/games/{gameId}": {
+      "schema": { "$ref": "#/entities/Game" },
+      "description": "Algebra 1 and OST review games displayed in the arcade."
+    },
+    "/authorizedTeachers/{teacherEmail}": {
+      "schema": { "$ref": "#/entities/AuthorizedTeacher" },
+      "description": "Authorized teacher emails permitted to manage arcade games."
+    }
+  }
+}

@@ -1,0 +1,235 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Primitive Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email is string;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string
+        && id.size() >= 1
+        && id.size() <= 128
+        && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidEmail(email) {
+      return email is string
+        && email.size() >= 5
+        && email.size() <= 128
+        && email.matches('^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$');
+    }
+
+    function isBootstrappedAdmin() {
+      return isEmailVerified()
+        && request.auth.token.email == 'ky_baker@chuh.org';
+    }
+
+    function isAuthorizedTeacher() {
+      return isEmailVerified()
+        && exists(/databases/$(database)/documents/authorizedTeachers/$(request.auth.token.email));
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || isAuthorizedTeacher();
+    }
+
+    // --- Validation Blueprints ---
+    function isValidTopic(topic) {
+      return topic in [
+        'Data Analysis (Box Whisker, Line of Best Fit, Data, etc...)',
+        'All Things Polynomials',
+        'Functions and Function Notations',
+        'Factoring, Solving, Modeling, Analyzing Quadratics',
+        'Create, Analyze, Model Exponential Functions',
+        'Creating, Graphing, Modeling Linear (Part 1)',
+        'Creating, Graphing, Modeling Linear (Part 2)',
+        'Creating, Solving, Modeling Systems of Equations',
+        'Expressions (Simplify, Equivalent, Evaluate)',
+        'Equations and Inequalities',
+        'Other Topics'
+      ];
+    }
+
+    function isValidReviewType(reviewType) {
+      return reviewType in ['OST Review', 'Topic Review'];
+    }
+
+    function isValidThumbnail(thumb) {
+      return thumb is string
+        && thumb.size() >= 20
+        && thumb.size() <= 450000
+        && thumb.matches('^(data:image/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=]+|/src/assets/images/[a-zA-Z0-9_.-]+\\.(jpg|jpeg|png|webp))$');
+    }
+
+    function isValidGame(data) {
+      return data.keys().hasAll([
+          'title',
+          'description',
+          'topic',
+          'reviewType',
+          'gameUrl',
+          'thumbnailData',
+          'published',
+          'featured',
+          'sortOrder',
+          'createdByUid',
+          'createdByName',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'title',
+          'description',
+          'topic',
+          'reviewType',
+          'gameUrl',
+          'thumbnailData',
+          'published',
+          'featured',
+          'sortOrder',
+          'createdByUid',
+          'createdByName',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.title is string
+        && data.title.size() >= 2
+        && data.title.size() <= 80
+        && data.description is string
+        && data.description.size() >= 5
+        && data.description.size() <= 260
+        && data.topic is string
+        && isValidTopic(data.topic)
+        && data.reviewType is string
+        && isValidReviewType(data.reviewType)
+        && data.gameUrl is string
+        && data.gameUrl.size() >= 5
+        && data.gameUrl.size() <= 500
+        && data.gameUrl.matches('^(https?://.+|#warmup:.+)$')
+        && isValidThumbnail(data.thumbnailData)
+        && data.published is bool
+        && data.featured is bool
+        && data.sortOrder is int
+        && data.sortOrder >= 0
+        && data.sortOrder <= 1000
+        && data.createdByUid is string
+        && data.createdByUid.size() >= 1
+        && data.createdByUid.size() <= 128
+        && data.createdByName is string
+        && data.createdByName.size() >= 2
+        && data.createdByName.size() <= 80
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAuthorizedTeacher(data, teacherEmail) {
+      return data.keys().hasAll(['email', 'displayName', 'addedByUid', 'createdAt'])
+        && data.keys().hasOnly(['email', 'displayName', 'addedByUid', 'createdAt'])
+        && isValidEmail(data.email)
+        && data.email == teacherEmail
+        && data.displayName is string
+        && data.displayName.size() >= 2
+        && data.displayName.size() <= 80
+        && data.addedByUid is string
+        && data.addedByUid.size() >= 1
+        && data.addedByUid.size() <= 128
+        && data.createdAt is timestamp;
+    }
+
+    // Connection test document (read-only health check)
+    match /test/{docId} {
+      allow get: if docId == 'connection';
+    }
+
+    // Games collection
+    match /games/{gameId} {
+      allow get: if isValidId(gameId)
+        && (existing().published == true || isAdmin());
+
+      allow list: if resource.data.published == true || isAdmin();
+
+      allow create: if isSignedIn()
+        && isValidId(gameId)
+        && isValidGame(incoming())
+        && incoming().createdByUid == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && isAdmin();
+
+      allow update: if isSignedIn()
+        && isValidId(gameId)
+        && isValidGame(incoming())
+        && incoming().createdByUid == existing().createdByUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title',
+          'description',
+          'topic',
+          'reviewType',
+          'gameUrl',
+          'thumbnailData',
+          'published',
+          'featured',
+          'sortOrder',
+          'createdByName',
+          'updatedAt'
+        ])
+        && isAdmin();
+
+      allow delete: if isSignedIn()
+        && isValidId(gameId)
+        && isAdmin();
+    }
+
+    // Authorized Teachers collection (PII isolated to admins & self-check)
+    match /authorizedTeachers/{teacherEmail} {
+      allow get: if isValidEmail(teacherEmail)
+        && (
+          isAdmin()
+          || (isEmailVerified() && request.auth.token.email == teacherEmail)
+        );
+
+      allow list: if isAdmin();
+
+      allow create: if isSignedIn()
+        && isValidEmail(teacherEmail)
+        && isValidAuthorizedTeacher(incoming(), teacherEmail)
+        && incoming().addedByUid == request.auth.uid
+        && incoming().createdAt == request.time
+        && isAdmin();
+
+      allow update: if isSignedIn()
+        && isValidEmail(teacherEmail)
+        && isValidAuthorizedTeacher(incoming(), teacherEmail)
+        && incoming().addedByUid == existing().addedByUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName'])
+        && isAdmin();
+
+      allow delete: if isSignedIn()
+        && isValidEmail(teacherEmail)
+        && isAdmin();
+    }
+  }
+}
