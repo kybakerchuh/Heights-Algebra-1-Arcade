@@ -236,10 +236,10 @@ export function GameEditorModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="game-editor-title"
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
     >
-      <div className="my-8 max-w-2xl w-full bg-[#131317] border border-[#F5B700]/30 rounded-xl overflow-hidden shadow-2xl">
-        <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between gap-4">
+      <div className="max-w-2xl w-full max-h-[calc(100vh-2rem)] bg-[#131317] border border-[#F5B700]/30 rounded-xl overflow-hidden shadow-2xl flex flex-col">
+        <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between gap-4 shrink-0">
           <div>
             <p className="text-xs font-semibold text-[#F5B700]">
               Teacher Arcade Editor
@@ -261,7 +261,8 @@ export function GameEditorModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="p-6 space-y-5 overflow-y-auto flex-1">
           {errorMessage && (
             <div className="p-3.5 bg-rose-500/15 border border-rose-400/50 rounded-lg text-sm text-rose-200">
               {errorMessage}
@@ -450,7 +451,7 @@ export function GameEditorModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-[#0A0A0C] border border-white/10 rounded-lg max-h-56 overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-[#0A0A0C] border border-white/10 rounded-lg">
                 {TOPIC_CATEGORIES.map((cat) => {
                   const checked = selectedTopics.includes(cat);
                   return (
@@ -604,7 +605,9 @@ export function GameEditorModal({
             </label>
           </div>
 
-          <div className="pt-4 border-t border-white/10 flex items-center justify-end gap-3">
+          </div>
+
+          <div className="px-6 py-4 border-t border-white/10 bg-[#131317] flex items-center justify-end gap-3 shrink-0">
             <button
               type="button"
               onClick={onClose}
