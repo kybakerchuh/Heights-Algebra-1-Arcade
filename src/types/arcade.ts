@@ -18,6 +18,9 @@ export const TOPIC_CATEGORIES = [
 
 export type TopicCategory = (typeof TOPIC_CATEGORIES)[number];
 
+export const ALL_TOPICS_VALUE = 'All Topics' as const;
+export type GamePrimaryTopic = TopicCategory | typeof ALL_TOPICS_VALUE;
+
 export const REVIEW_TYPES = ['OST Review', 'Topic Review'] as const;
 export type ReviewType = (typeof REVIEW_TYPES)[number];
 
@@ -25,7 +28,8 @@ export interface ArcadeGame {
   id: string;
   title: string;
   description: string;
-  topic: TopicCategory;
+  topic: GamePrimaryTopic;
+  topics?: TopicCategory[];
   reviewType: ReviewType;
   gameUrl: string;
   thumbnailData: string;
@@ -36,6 +40,38 @@ export interface ArcadeGame {
   createdByName: string;
   createdAt?: unknown;
   updatedAt?: unknown;
+}
+
+export function formatGameTopicsLabel(
+  game: Pick<ArcadeGame, 'topic' | 'topics'>
+): string {
+  const list = game.topics && game.topics.length > 0 ? game.topics : null;
+  if (
+    game.topic === ALL_TOPICS_VALUE ||
+    (list && CORE_ALGEBRA_TOPICS.every((t) => list.includes(t)))
+  ) {
+    return ALL_TOPICS_VALUE;
+  }
+  if (list && list.length > 1) {
+    return `${list[0]} (+${list.length - 1} more)`;
+  }
+  if (list && list.length === 1) {
+    return list[0];
+  }
+  return game.topic;
+}
+
+export function gameMatchesTopicFilter(
+  game: Pick<ArcadeGame, 'topic' | 'topics'>,
+  selectedTopic: string
+): boolean {
+  if (selectedTopic === 'All') return true;
+  if (game.topic === ALL_TOPICS_VALUE) return true;
+  if (game.topic === selectedTopic) return true;
+  if (game.topics && game.topics.includes(selectedTopic as TopicCategory)) {
+    return true;
+  }
+  return false;
 }
 
 export interface AuthorizedTeacher {

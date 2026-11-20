@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import {
   ArcadeGame,
+  formatGameTopicsLabel,
+  gameMatchesTopicFilter,
   HERO_ARTWORK_PATH,
   REVIEW_TYPES,
   TOPIC_CATEGORIES,
@@ -42,9 +44,7 @@ export function GamesPage({
     const q = searchQuery.trim().toLowerCase();
     return games
       .filter((g) => (isAuthorizedTeacher ? true : g.published))
-      .filter((g) =>
-        selectedTopic === 'All' ? true : g.topic === selectedTopic
-      )
+      .filter((g) => gameMatchesTopicFilter(g, selectedTopic))
       .filter((g) =>
         selectedReviewType === 'All'
           ? true
@@ -56,6 +56,7 @@ export function GamesPage({
           g.title.toLowerCase().includes(q) ||
           g.description.toLowerCase().includes(q) ||
           g.topic.toLowerCase().includes(q) ||
+          Boolean(g.topics?.some((t) => t.toLowerCase().includes(q))) ||
           g.createdByName.toLowerCase().includes(q)
         );
       })
@@ -278,7 +279,12 @@ export function GamesPage({
                         <span aria-hidden="true" className="text-[#8A8880]">
                           ·
                         </span>
-                        <span className="text-[#B3B1AA]">{game.topic}</span>
+                        <span
+                          className="text-[#B3B1AA]"
+                          title={game.topics?.join(', ') || game.topic}
+                        >
+                          {formatGameTopicsLabel(game)}
+                        </span>
                         {!game.published && (
                           <>
                             <span aria-hidden="true" className="text-[#8A8880]">

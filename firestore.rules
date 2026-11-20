@@ -56,6 +56,7 @@ service cloud.firestore {
     // --- Validation Blueprints ---
     function isValidTopic(topic) {
       return topic in [
+        'All Topics',
         'Data Analysis (Box Whisker, Line of Best Fit, Data, etc...)',
         'All Things Polynomials',
         'Functions and Function Notations',
@@ -68,6 +69,26 @@ service cloud.firestore {
         'Equations and Inequalities',
         'Other Topics'
       ];
+    }
+
+    function isValidTopicsList(topics) {
+      return topics is list
+        && topics.size() >= 1
+        && topics.size() <= 11
+        && topics[0] is string
+        && topics.hasOnly([
+          'Data Analysis (Box Whisker, Line of Best Fit, Data, etc...)',
+          'All Things Polynomials',
+          'Functions and Function Notations',
+          'Factoring, Solving, Modeling, Analyzing Quadratics',
+          'Create, Analyze, Model Exponential Functions',
+          'Creating, Graphing, Modeling Linear (Part 1)',
+          'Creating, Graphing, Modeling Linear (Part 2)',
+          'Creating, Solving, Modeling Systems of Equations',
+          'Expressions (Simplify, Equivalent, Evaluate)',
+          'Equations and Inequalities',
+          'Other Topics'
+        ]);
     }
 
     function isValidReviewType(reviewType) {
@@ -101,6 +122,7 @@ service cloud.firestore {
           'title',
           'description',
           'topic',
+          'topics',
           'reviewType',
           'gameUrl',
           'thumbnailData',
@@ -120,6 +142,7 @@ service cloud.firestore {
         && data.description.size() <= 260
         && data.topic is string
         && isValidTopic(data.topic)
+        && (!('topics' in data) || isValidTopicsList(data.topics))
         && data.reviewType is string
         && isValidReviewType(data.reviewType)
         && data.gameUrl is string
@@ -186,6 +209,7 @@ service cloud.firestore {
           'title',
           'description',
           'topic',
+          'topics',
           'reviewType',
           'gameUrl',
           'thumbnailData',

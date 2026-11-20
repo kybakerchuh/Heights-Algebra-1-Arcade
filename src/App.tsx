@@ -35,6 +35,8 @@ import {
   ArcadeGame,
   AuthorizedTeacher,
   BOOTSTRAPPED_ADMIN_EMAIL,
+  TOPIC_CATEGORIES,
+  TopicCategory,
 } from './types/arcade';
 import {
   PASSCODE_STORAGE_KEY,
@@ -106,13 +108,24 @@ function ArcadeAppContent() {
     const unsubscribe = onSnapshot(
       gamesQuery,
       (snapshot) => {
+        const validTopicSet = new Set<string>(TOPIC_CATEGORIES);
         const loaded: ArcadeGame[] = snapshot.docs.map((d) => {
           const data = d.data();
+          const parsedTopics = Array.isArray(data.topics)
+            ? data.topics.filter(
+                (t): t is TopicCategory =>
+                  typeof t === 'string' && validTopicSet.has(t)
+              )
+            : undefined;
           return {
             id: d.id,
             title: String(data.title ?? ''),
             description: String(data.description ?? ''),
             topic: data.topic,
+            topics:
+              parsedTopics && parsedTopics.length > 0
+                ? parsedTopics
+                : undefined,
             reviewType: data.reviewType,
             gameUrl: String(data.gameUrl ?? ''),
             thumbnailData: String(data.thumbnailData ?? ''),
@@ -237,6 +250,7 @@ function ArcadeAppContent() {
           title: values.title,
           description: values.description,
           topic: values.topic,
+          topics: values.topics,
           reviewType: values.reviewType,
           gameUrl: values.gameUrl,
           thumbnailData: values.thumbnailData,
@@ -262,6 +276,7 @@ function ArcadeAppContent() {
           title: values.title,
           description: values.description,
           topic: values.topic,
+          topics: values.topics,
           reviewType: values.reviewType,
           gameUrl: values.gameUrl,
           thumbnailData: values.thumbnailData,

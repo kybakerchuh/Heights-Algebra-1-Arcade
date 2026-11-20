@@ -20,6 +20,7 @@ import {
   AuthorizedTeacher,
   BOOTSTRAPPED_ADMIN_EMAIL,
   EMAIL_PATTERN,
+  formatGameTopicsLabel,
 } from '../types/arcade';
 import { ThumbnailImage } from './ThumbnailImage';
 
@@ -390,7 +391,12 @@ export function TeacherPortal({
                       <span aria-hidden="true" className="text-[#8A8880]">
                         ·
                       </span>
-                      <span className="text-[#B3B1AA]">{game.topic}</span>
+                      <span
+                        className="text-[#B3B1AA]"
+                        title={game.topics?.join(', ') || game.topic}
+                      >
+                        {formatGameTopicsLabel(game)}
+                      </span>
                       <span aria-hidden="true" className="text-[#8A8880]">
                         ·
                       </span>

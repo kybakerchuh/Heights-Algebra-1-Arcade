@@ -1,10 +1,13 @@
 import React, { useRef, useState } from 'react';
 import { ImagePlus, Loader2, Upload, X } from 'lucide-react';
 import {
+  ALL_TOPICS_VALUE,
   ArcadeGame,
   BUNDLED_THUMBNAILS,
+  CORE_ALGEBRA_TOPICS,
   GAME_LIMITS,
   GAME_URL_PATTERN,
+  GamePrimaryTopic,
   REVIEW_TYPES,
   ReviewType,
   THUMBNAIL_PATTERN,
@@ -17,7 +20,8 @@ import { ThumbnailImage } from './ThumbnailImage';
 export interface GameFormValues {
   title: string;
   description: string;
-  topic: TopicCategory;
+  topic: GamePrimaryTopic;
+  topics: TopicCategory[];
   reviewType: ReviewType;
   gameUrl: string;
   thumbnailData: string;
@@ -34,6 +38,27 @@ interface GameEditorModalProps {
   onSave: (values: GameFormValues, existingId?: string) => Promise<void>;
 }
 
+function getInitialSelectedTopics(
+  initialGame: ArcadeGame | null
+): TopicCategory[] {
+  if (initialGame?.topics && initialGame.topics.length > 0) {
+    const valid = initialGame.topics.filter((t) =>
+      (TOPIC_CATEGORIES as readonly string[]).includes(t)
+    );
+    if (valid.length > 0) return valid;
+  }
+  if (initialGame?.topic === ALL_TOPICS_VALUE) {
+    return [...TOPIC_CATEGORIES];
+  }
+  if (
+    initialGame?.topic &&
+    (TOPIC_CATEGORIES as readonly string[]).includes(initialGame.topic)
+  ) {
+    return [initialGame.topic as TopicCategory];
+  }
+  return [TOPIC_CATEGORIES[0]];
+}
+
 export function GameEditorModal({
   initialGame,
   defaultTeacherName,
@@ -44,8 +69,8 @@ export function GameEditorModal({
   const [description, setDescription] = useState(
     initialGame?.description ?? ''
   );
-  const [topic, setTopic] = useState<TopicCategory>(
-    initialGame?.topic ?? TOPIC_CATEGORIES[0]
+  const [selectedTopics, setSelectedTopics] = useState<TopicCategory[]>(() =>
+    getInitialSelectedTopics(initialGame)
   );
   const [reviewType, setReviewType] = useState<ReviewType>(
     initialGame?.reviewType ?? 'OST Review'
@@ -162,13 +187,28 @@ export function GameEditorModal({
       return;
     }
 
+    if (selectedTopics.length === 0) {
+      setErrorMessage(
+        'Please select at least one Algebra 1 topic (or click Select All Topics).'
+      );
+      return;
+    }
+
+    const coversAllCoreTopics = CORE_ALGEBRA_TOPICS.every((t) =>
+      selectedTopics.includes(t)
+    );
+    const primaryTopic: GamePrimaryTopic = coversAllCoreTopics
+      ? ALL_TOPICS_VALUE
+      : selectedTopics[0];
+
     setSubmitting(true);
     try {
       await onSave(
         {
           title: trimmedTitle,
           description: trimmedDesc,
-          topic,
+          topic: primaryTopic,
+          topics: selectedTopics,
           reviewType,
           gameUrl: trimmedUrl,
           thumbnailData,
@@ -363,28 +403,85 @@ export function GameEditorModal({
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label
-                htmlFor="game-topic-select"
-                className="block text-xs font-semibold text-[#F8F7F4]"
-              >
-                Algebra 1 Topic
-              </label>
-              <select
-                id="game-topic-select"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value as TopicCategory)}
-                className="w-full px-3.5 py-2.5 bg-[#0A0A0C] border border-white/10 rounded-lg text-sm text-[#F8F7F4] focus:outline-none focus:border-[#F5B700]"
-              >
-                {TOPIC_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+            <div className="sm:col-span-2 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span className="block text-xs font-semibold text-[#F8F7F4]">
+                    Algebra 1 Topics Covered
+                  </span>
+                  <span className="text-xs text-[#8A8880]">
+                    {CORE_ALGEBRA_TOPICS.every((t) =>
+                      selectedTopics.includes(t)
+                    )
+                      ? 'All Topics selected (appears under every topic filter)'
+                      : `${selectedTopics.length} topic${selectedTopics.length === 1 ? '' : 's'} selected`}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allSelected = TOPIC_CATEGORIES.every((t) =>
+                        selectedTopics.includes(t)
+                      );
+                      setSelectedTopics(
+                        allSelected ? [] : [...TOPIC_CATEGORIES]
+                      );
+                    }}
+                    className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
+                      TOPIC_CATEGORIES.every((t) => selectedTopics.includes(t))
+                        ? 'border-[#F5B700] bg-[#F5B700] text-[#0A0A0C]'
+                        : 'border-[#F5B700]/40 bg-[#F5B700]/10 text-[#F5B700] hover:bg-[#F5B700]/20'
+                    }`}
+                  >
+                    {TOPIC_CATEGORIES.every((t) => selectedTopics.includes(t))
+                      ? 'All Topics Selected'
+                      : 'Select All Topics'}
+                  </button>
+                  {selectedTopics.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTopics([])}
+                      className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-[#0A0A0C] text-xs text-[#B3B1AA] hover:text-[#F8F7F4] hover:border-white/25 transition-colors cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-[#0A0A0C] border border-white/10 rounded-lg max-h-56 overflow-y-auto">
+                {TOPIC_CATEGORIES.map((cat) => {
+                  const checked = selectedTopics.includes(cat);
+                  return (
+                    <label
+                      key={cat}
+                      className={`flex items-start gap-2.5 px-3 py-2 rounded-lg border text-xs transition-colors cursor-pointer ${
+                        checked
+                          ? 'border-[#F5B700]/60 bg-[#F5B700]/10 text-[#F8F7F4]'
+                          : 'border-white/5 bg-[#131317] text-[#B3B1AA] hover:border-white/20'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setSelectedTopics((prev) =>
+                            prev.includes(cat)
+                              ? prev.filter((item) => item !== cat)
+                              : [...prev, cat]
+                          );
+                        }}
+                        className="mt-0.5 w-3.5 h-3.5 accent-[#F5B700] rounded shrink-0"
+                      />
+                      <span className="leading-snug">{cat}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="sm:col-span-2 space-y-1.5">
               <label
                 htmlFor="game-review-type-select"
                 className="block text-xs font-semibold text-[#F8F7F4]"
