@@ -238,7 +238,7 @@ export function GameEditorModal({
       aria-labelledby="game-editor-title"
       className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
     >
-      <div className="max-w-2xl w-full max-h-[calc(100vh-2rem)] bg-[#131317] border border-[#F5B700]/30 rounded-xl overflow-hidden shadow-2xl flex flex-col">
+      <div className="max-w-2xl w-full max-h-[90vh] bg-[#131317] border border-[#F5B700]/30 rounded-xl overflow-hidden shadow-2xl flex flex-col">
         <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between gap-4 shrink-0">
           <div>
             <p className="text-xs font-semibold text-[#F5B700]">
@@ -261,8 +261,11 @@ export function GameEditorModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-          <div className="p-6 space-y-5 overflow-y-auto flex-1">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 min-h-0 overflow-hidden"
+        >
+          <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
           {errorMessage && (
             <div className="p-3.5 bg-rose-500/15 border border-rose-400/50 rounded-lg text-sm text-rose-200">
               {errorMessage}
